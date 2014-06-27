@@ -99,7 +99,7 @@ func PointInRectanglef(r Rectanglef, p Coordf) bool {
 	return (r.Min.X <= p.X) && (r.Min.Y <= p.Y) && (p.X < r.Max.X) && (p.Y < r.Max.Y)
 }
 
-func RectanglefIntersectionf(r1, r2 Rectanglef) (intersect Rectanglef, ok bool) {
+func RectanglefIntersection(r1, r2 Rectanglef) (intersect Rectanglef, ok bool) {
 	intersect = Rectanglef{
 		Min: Coordf{maxf(r1.Min.X, r2.Min.X), maxf(r1.Min.Y, r2.Min.Y)},
 		Max: Coordf{minf(r1.Max.X, r2.Max.X), minf(r1.Max.Y, r2.Max.Y)},
@@ -109,21 +109,21 @@ func RectanglefIntersectionf(r1, r2 Rectanglef) (intersect Rectanglef, ok bool) 
 	return
 }
 
-func RectanglefUnionf(r1, r2 Rectanglef) Rectanglef {
+func RectanglefUnion(r1, r2 Rectanglef) Rectanglef {
 	return Rectanglef{
 		Min: Coordf{minf(r1.Min.X, r2.Min.X), minf(r1.Min.Y, r2.Min.Y)},
 		Max: Coordf{maxf(r1.Max.X, r2.Max.X), maxf(r1.Max.Y, r2.Max.Y)},
 	}
 }
 
-func RectanglefContainsf(rOuter, rInner Rectanglef) bool {
+func RectanglefContains(rOuter, rInner Rectanglef) bool {
 	return PointInRectanglef(rOuter, rInner.Min) && PointInRectanglef(rOuter, rInner.Max)
 }
 
-func RectanglefFromPosSizef(pos, size Coordf) Rectanglef {
+func RectanglefFromPosSize(pos, size Coordf) Rectanglef {
 	return Rectanglef{pos, Addf(pos, size)}
 }
 
-func RectanglefFromSizef(size Coordf) Rectanglef {
+func RectanglefFromSize(size Coordf) Rectanglef {
 	return Rectanglef{Max: size}
 }
