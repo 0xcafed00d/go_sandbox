@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"time"
 	//	"strings"
 )
 
@@ -39,6 +40,8 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 	host := r.FormValue("host")
 	port := r.FormValue("port")
 
+	// TODO: validate host/port
+
 	cmd := exec.Command("tcptraceroute")
 	cmd.Stdout = &fw
 	cmd.Stderr = &fw
@@ -52,8 +55,23 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func testHandler(w http.ResponseWriter, r *http.Request) {
+	fw := flushWriter{w: w}
+	if f, ok := w.(http.Flusher); ok {
+		fw.f = f
+	}
+
+	fmt.Fprint(w, "[[[[[output start]]]]]\n")
+	for n := 0; n < 30; n++ {
+		fmt.Fprintf(&fw, "**************  OUTPUT LINE: %d ******************************************************************\n", n)
+		time.Sleep(1000 * time.Millisecond)
+	}
+	fmt.Fprint(w, "[[[[[output complete]]]]]\n")
+}
+
 func main() {
 	http.HandleFunc("/editcmd/", editCommandHandler)
 	http.HandleFunc("/exec/", execHandler)
+	http.HandleFunc("/test/", testHandler)
 	http.ListenAndServe(":8080", nil)
 }
