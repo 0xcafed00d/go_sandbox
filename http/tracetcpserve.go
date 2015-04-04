@@ -2,15 +2,12 @@ package main
 
 import (
 	"fmt"
-	//	"github.com/davecgh/go-spew/spew"
-	//	"html/template"
 	"io"
-	//	"io/ioutil"
 	"log"
 	"net/http"
 	"os/exec"
 	"time"
-	//	"strings"
+	"unicode"
 )
 
 type flushWriter struct {
@@ -31,6 +28,15 @@ func editCommandHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "editcmd.html")
 }
 
+func validate(s string) bool {
+	for _, r := range s {
+		if !unicode.IsDigit(r) && !unicode.IsLetter(r) && r != '.' {
+			return false
+		}
+	}
+	return true
+}
+
 func execHandler(w http.ResponseWriter, r *http.Request) {
 	fw := flushWriter{w: w}
 	if f, ok := w.(http.Flusher); ok {
@@ -39,6 +45,18 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 
 	host := r.FormValue("host")
 	port := r.FormValue("port")
+
+	if !validate(host) {
+		fmt.Fprint(w, "Invalid Host Name")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if !validate(port) {
+		fmt.Fprint(w, "Invalid Port Number")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	// TODO: validate host/port
 
@@ -52,6 +70,7 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 	err := cmd.Run()
 	if err != nil {
 		fmt.Fprintf(w, "%s\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
