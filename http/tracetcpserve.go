@@ -45,6 +45,7 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 
 	host := r.FormValue("host")
 	port := r.FormValue("port")
+	//backToClient := r.FormValue("backToClient")
 
 	if !validate(host) {
 		fmt.Fprint(w, "Invalid Host Name")
