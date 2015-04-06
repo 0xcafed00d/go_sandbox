@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
 	"unicode"
 )
@@ -45,7 +46,10 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 
 	host := r.FormValue("host")
 	port := r.FormValue("port")
-	//backToClient := r.FormValue("backToClient")
+
+	if r.FormValue("source") == "ok" {
+		host = r.RemoteAddr[:strings.Index(r.RemoteAddr, ":")]
+	}
 
 	if !validate(host) {
 		fmt.Fprint(w, "Invalid Host Name")
@@ -58,8 +62,6 @@ func execHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	// TODO: validate host/port
 
 	cmd := exec.Command("tcptraceroute")
 	cmd.Stdout = &fw
