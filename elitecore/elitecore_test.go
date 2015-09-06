@@ -1,8 +1,11 @@
 package elitecore
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
 
-func main() {
+func TestEliteCore(t *testing.T) {
 
 	seed := NewRNGSeed(1, 2, 3, 4)
 
