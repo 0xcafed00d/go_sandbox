@@ -43,7 +43,7 @@ const (
 
 type tradegood struct {
 	baseprice uint32
-	gradient  uint32
+	gradient  int32
 	basequant uint32
 	maskbyte  uint32
 	units     MarketUnitType
@@ -68,4 +68,34 @@ var commodities = []tradegood{
 	{0xAB, -0x02, 0x37, 0x1F, UNIT_KG, "Platinum"},
 	{0x2D, -0x01, 0xFA, 0x0F, UNIT_G, "Gem-Stones"},
 	{0x35, +0x0F, 0xC0, 0x07, UNIT_T, "Alien Items"},
+}
+
+type SystemInfo struct {
+	X              int
+	Y              int
+	Economy        int
+	Govtype        int
+	Techlev        int
+	Population     int
+	Productivity   int
+	Radius         int
+	Name           string
+	Description    string
+	InhabitantDesc string
+}
+
+type MarketItem struct {
+	itemID   int
+	price    int
+	quantity int
+	unit     MarketUnitType
+	name     string
+}
+
+type Galaxy struct {
+	Systems []SystemInfo
+}
+
+func GenerateGalaxy(num int) Galaxy {
+
 }
