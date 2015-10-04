@@ -54,16 +54,12 @@ func TestPanic(t *testing.T) {
 	panic(3)
 }
 
-func ReturnOnError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func SetupErrorReturn(errp *error) {
+func SetOnError(errp *error) {
 	if r := recover(); r != nil {
 		if err, ok := r.(error); ok {
 			*errp = err
+		} else {
+			panic(r)
 		}
 	}
 }
@@ -72,18 +68,26 @@ func OnError(f func(err error)) {
 	if r := recover(); r != nil {
 		if err, ok := r.(error); ok {
 			f(err)
+		} else {
+			panic(r)
 		}
+	}
+}
+
+func ReturnError(err error) {
+	if err != nil {
+		panic(err)
 	}
 }
 
 func TestPanic2(t *testing.T) {
 
 	test := func() (err error) {
-		defer SetupErrorReturn(&err)
+		defer SetOnError(&err)
 
-		ReturnOnError(nil)
-		ReturnOnError(errors.New("this is an error1"))
-		ReturnOnError(errors.New("this is an error2"))
+		ReturnError(nil)
+		ReturnError(errors.New("this is an error1"))
+		ReturnError(errors.New("this is an error2"))
 
 		return
 	}
@@ -94,13 +98,14 @@ func TestPanic2(t *testing.T) {
 func TestPanic3(t *testing.T) {
 
 	test := func() (i int, err error) {
+
 		defer OnError(func(e error) {
 			i, err = 0, e
 		})
 
-		ReturnOnError(nil)
-		ReturnOnError(errors.New("this is an error1"))
-		ReturnOnError(errors.New("this is an error2"))
+		ReturnError(nil)
+		ReturnError(errors.New("this is an error1"))
+		ReturnError(errors.New("this is an error2"))
 
 		return
 	}
