@@ -59,17 +59,20 @@ func callFunction(f interface{}, arg interface{}) bool {
 }
 
 func (t *Tryblock) Finally(finally func()) {
+
+	inFinally := false
 	defer func() {
 		if r := recover(); r != nil {
 			called := false
-			for _, f := range t.catchers {
-				called = callFunction(f, r)
-				if called {
-					break
+			if !inFinally {
+				for _, f := range t.catchers {
+					called = callFunction(f, r)
+					if called {
+						break
+					}
 				}
+				finally()
 			}
-
-			finally()
 
 			if !called {
 				panic(r)
@@ -78,6 +81,7 @@ func (t *Tryblock) Finally(finally func()) {
 	}()
 
 	t.try()
+	inFinally = true
 	finally()
 }
 
