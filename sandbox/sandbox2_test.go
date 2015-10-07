@@ -6,6 +6,7 @@ package sandbox
 import (
 	//	"errors"
 	"fmt"
+	"github.com/simulatedsimian/assert"
 	"reflect"
 	"testing"
 )
@@ -98,4 +99,23 @@ func TestThrow(t *testing.T) {
 	}).Finally(func() {
 		fmt.Println("finally")
 	})
+}
+
+func TestThrow2(t *testing.T) {
+
+	assert.MustPanic(t, func(t *testing.T) {
+
+		Try(func() {
+		}).Catch(func(e int) {
+			fmt.Println("caught:", reflect.TypeOf(e), e)
+		}).Catch(func(e string) {
+			fmt.Println("caught:", reflect.TypeOf(e), e)
+		}).Catch(func(e error) {
+			fmt.Println("caught:", reflect.TypeOf(e), e)
+		}).Finally(func() {
+			Throw("asdf")
+		})
+
+	})
+
 }
