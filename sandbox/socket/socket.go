@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"syscall"
+	"time"
 )
 
 func getAddress(host string) ([4]byte, error) {
@@ -23,7 +24,7 @@ func getAddress(host string) ([4]byte, error) {
 	return addr, nil
 }
 
-func connect(host string, port, ttl, timeoutMS int) error {
+func connect(host string, port, ttl int, timeout time.Duration) error {
 	sock, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
 	if err != nil {
 		return err
@@ -51,11 +52,13 @@ func connect(host string, port, ttl, timeoutMS int) error {
 	}
 
 	fdset := &syscall.FdSet{}
-	timeout := &syscall.Timeval{}
+	timeoutVal := &syscall.Timeval{}
+	timeoutVal.Sec = int64(timeout / time.Second)
+	timeoutVal.Usec = int64(timeout - time.Duration(timeoutVal.Sec)*time.Second)
 
 	FD_ZERO(fdset)
 	FD_SET(fdset, sock)
-	_, err = syscall.Select(sock+1, nil, nil, fdset, timeout)
+	_, err = syscall.Select(sock+1, nil, nil, fdset, timeoutVal)
 	if err != nil {
 		return err
 	}
