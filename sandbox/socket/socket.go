@@ -46,31 +46,40 @@ func connect(host string, port, ttl int, timeout time.Duration) error {
 		return nil
 	}
 
-	err = syscall.Connect(sock, &syscall.SockaddrInet4{Port: 80, Addr: addr})
-	if err != nil {
-		return err
-	}
+	// ignore error from connect in non-blocking mode. as it will always return a
+	// in progress error
+	_ = syscall.Connect(sock, &syscall.SockaddrInet4{Port: 80, Addr: addr})
 
 	fdset := &syscall.FdSet{}
 	timeoutVal := &syscall.Timeval{}
 	timeoutVal.Sec = int64(timeout / time.Second)
-	timeoutVal.Usec = int64(timeout - time.Duration(timeoutVal.Sec)*time.Second)
+	timeoutVal.Usec = int64(timeout-time.Duration(timeoutVal.Sec)*time.Second) / 1000
+
+	fmt.Println(timeoutVal)
 
 	FD_ZERO(fdset)
 	FD_SET(fdset, sock)
-	_, err = syscall.Select(sock+1, nil, nil, fdset, timeoutVal)
+
+	start := time.Now()
+	x, err := syscall.Select(sock+1, nil, fdset, nil, timeoutVal)
+	elapsed := time.Since(start)
+
+	fmt.Println(x, elapsed)
 	if err != nil {
 		return err
 	}
 
 	if FD_ISSET(fdset, sock) {
+		fmt.Println("conencted")
+	} else {
+		fmt.Println("timedout")
 	}
 
 	return nil
 }
 
 func main() {
-	fmt.Println(connect("www.ebay.com", 80, 8, 100))
+	fmt.Println(connect("www.google.com", 80, 80, 10*time.Millisecond))
 }
 
 func FD_SET(p *syscall.FdSet, i int) {
