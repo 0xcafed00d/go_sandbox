@@ -24,6 +24,25 @@ func getAddress(host string) ([4]byte, error) {
 	return addr, nil
 }
 
+func recICMP() {
+	// Set up the socket to receive inbound packets
+	sock, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
+	if err != nil {
+		panic(err)
+	}
+
+	err = syscall.Bind(sock, &syscall.SockaddrInet4{})
+	if err != nil {
+		panic(err)
+	}
+
+	var pkt = make([]byte, 1024)
+	for {
+		n, from, err := syscall.Recvfrom(sock, pkt, 0)
+		fmt.Println("ICMP: ", n, from, err)
+	}
+}
+
 func connect(host string, port, ttl int, timeout time.Duration) error {
 	sock, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
 	if err != nil {
@@ -49,6 +68,9 @@ func connect(host string, port, ttl int, timeout time.Duration) error {
 	// ignore error from connect in non-blocking mode. as it will always return a
 	// in progress error
 	_ = syscall.Connect(sock, &syscall.SockaddrInet4{Port: 80, Addr: addr})
+
+	name, err := syscall.Getsockname(sock)
+	fmt.Println(err, name)
 
 	fdset := &syscall.FdSet{}
 	timeoutVal := &syscall.Timeval{}
@@ -79,7 +101,10 @@ func connect(host string, port, ttl int, timeout time.Duration) error {
 }
 
 func main() {
-	fmt.Println(connect("www.google.com", 80, 80, 10*time.Millisecond))
+	go recICMP()
+
+	fmt.Println(connect("www.google.com", 80, 7, 500*time.Millisecond))
+	fmt.Println(connect("www.google.co.uk", 80, 7, 500*time.Millisecond))
 }
 
 func FD_SET(p *syscall.FdSet, i int) {
