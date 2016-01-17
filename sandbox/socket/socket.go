@@ -44,6 +44,8 @@ func recICMP() {
 }
 
 func connect(host string, port, ttl int, timeout time.Duration) error {
+	fmt.Println("\nConnecting to: ", host, "......")
+
 	sock, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
 	if err != nil {
 		return err
@@ -92,9 +94,15 @@ func connect(host string, port, ttl int, timeout time.Duration) error {
 	}
 
 	if FD_ISSET(fdset, sock) {
-		fmt.Println("conencted")
+		fmt.Println("conencted?")
+
+		// detect if actually connected
+		sa, err := syscall.Getpeername(sock)
+		fmt.Println(sa, err)
+		return err
 	} else {
 		fmt.Println("timedout")
+		return fmt.Errorf("timed out")
 	}
 
 	return nil
@@ -103,8 +111,10 @@ func connect(host string, port, ttl int, timeout time.Duration) error {
 func main() {
 	go recICMP()
 
-	fmt.Println(connect("www.google.com", 80, 7, 500*time.Millisecond))
-	fmt.Println(connect("www.google.co.uk", 80, 7, 500*time.Millisecond))
+	fmt.Println(connect("www.google.com", 80, 99, 500*time.Millisecond))
+	fmt.Println(connect("www.google.co.uk", 80, 3, 500*time.Millisecond))
+
+	time.Sleep(5 * time.Second)
 }
 
 func FD_SET(p *syscall.FdSet, i int) {
