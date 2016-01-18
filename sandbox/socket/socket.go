@@ -111,6 +111,15 @@ func connect(host string, port, ttl int, timeout time.Duration) error {
 func main() {
 	go recICMP()
 
+	for n := 1; n < 99; n++ {
+		fmt.Printf("\n\nStep %d .......", n)
+
+		err := connect("www.google.com", 80, n, 500*time.Millisecond)
+		if err == nil {
+			break
+		}
+	}
+
 	fmt.Println(connect("www.google.com", 80, 99, 500*time.Millisecond))
 	fmt.Println(connect("www.google.co.uk", 80, 3, 500*time.Millisecond))
 
