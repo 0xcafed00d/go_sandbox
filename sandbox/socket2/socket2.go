@@ -34,7 +34,23 @@ const (
 )
 
 func waitWithTimeout(socket int, timeout time.Duration) {
+	rfdset := &syscall.FdSet{}
+	wfdset := &syscall.FdSet{}
+	efdset := &syscall.FdSet{}
 
+	FD_ZERO(rfdset)
+	FD_ZERO(wfdset)
+	FD_ZERO(efdset)
+
+	FD_SET(rfdset, socket)
+	FD_SET(wfdset, socket)
+	FD_SET(efdset, socket)
+
+	timeval := syscall.NsecToTimeval(int64(timeout))
+
+	n, err := syscall.Select(socket+1, rfdset, wfdset, efdset, &timeval)
+
+	fmt.Println(n, err, FD_ISSET(rfdset, socket), FD_ISSET(wfdset, socket), FD_ISSET(efdset, socket))
 }
 
 func connect(host string, port, timeout time.Duration) error {
@@ -60,47 +76,14 @@ func connect(host string, port, timeout time.Duration) error {
 	// in progress error
 	_ = syscall.Connect(sock, &syscall.SockaddrInet4{Port: 80, Addr: addr})
 
-	name, err := syscall.Getsockname(sock)
-	fmt.Println(err, name)
-
-	fdset := &syscall.FdSet{}
-	timeoutVal := &syscall.Timeval{}
-	timeoutVal.Sec = int64(timeout / time.Second)
-	timeoutVal.Usec = int64(timeout-time.Duration(timeoutVal.Sec)*time.Second) / 1000
-
-	fmt.Println(timeoutVal)
-
-	FD_ZERO(fdset)
-	FD_SET(fdset, sock)
-
-	start := time.Now()
-	x, err := syscall.Select(sock+1, nil, fdset, nil, timeoutVal)
-	elapsed := time.Since(start)
-
-	fmt.Println(x, elapsed)
-	if err != nil {
-		return err
-	}
-
-	if FD_ISSET(fdset, sock) {
-		fmt.Println("conencted?")
-
-		// detect if actually connected
-		sa, err := syscall.Getpeername(sock)
-		fmt.Println(sa, err)
-		return err
-	} else {
-		fmt.Println("timedout")
-		return fmt.Errorf("timed out")
-	}
+	waitWithTimeout(sock, 500*time.Millisecond)
 
 	return nil
 }
 
 func main() {
-
 	err := connect("www.google.com", 80, 500*time.Millisecond)
-
+	fmt.Println(err)
 }
 
 func FD_SET(p *syscall.FdSet, i int) {
