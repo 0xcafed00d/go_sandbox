@@ -33,7 +33,21 @@ const (
 	SocketError
 )
 
-func waitWithTimeout(socket int, timeout time.Duration) {
+func (s SocketState) String() string {
+	switch s {
+	case SocketConnected:
+		return "SocketConnected"
+	case SocketTimedOut:
+		return "SocketTimedOut"
+	case SocketPortClosed:
+		return "SocketPortClosed"
+	case SocketError:
+		return "SocketError"
+	}
+	return "SocketInvlaidState"
+}
+
+func waitWithTimeoutPrint(socket int, timeout time.Duration) {
 	start := time.Now()
 
 	rfdset := &syscall.FdSet{}
@@ -51,8 +65,46 @@ func waitWithTimeout(socket int, timeout time.Duration) {
 	timeval := syscall.NsecToTimeval(int64(timeout))
 
 	n, err := syscall.Select(socket+1, rfdset, wfdset, efdset, &timeval)
+	errcode, err := syscall.GetsockoptInt(socket, syscall.SOL_SOCKET, syscall.SO_ERROR)
+	fmt.Println(n, err, FD_ISSET(rfdset, socket), FD_ISSET(wfdset, socket), FD_ISSET(efdset, socket), time.Since(start), errcode)
+}
 
-	fmt.Println(n, err, FD_ISSET(rfdset, socket), FD_ISSET(wfdset, socket), FD_ISSET(efdset, socket), time.Since(start))
+func waitWithTimeout(socket int, timeout time.Duration) (state SocketState, err error) {
+	wfdset := &syscall.FdSet{}
+
+	FD_ZERO(wfdset)
+	FD_SET(wfdset, socket)
+
+	timeval := syscall.NsecToTimeval(int64(timeout))
+
+	n, err := syscall.Select(socket+1, nil, wfdset, nil, &timeval)
+	if err != nil {
+		state = SocketError
+		return
+	}
+	errcode, err := syscall.GetsockoptInt(socket, syscall.SOL_SOCKET, syscall.SO_ERROR)
+	if err != nil {
+		state = SocketError
+		return
+	}
+
+	if errcode == int(syscall.ECONNREFUSED) {
+		state = SocketPortClosed
+		return
+	}
+
+	if errcode != 0 {
+		state = SocketError
+		err = fmt.Errorf("Connect Error: %v", errcode)
+		return
+	}
+
+	if n == 0 {
+		state = SocketTimedOut
+	} else {
+		state = SocketConnected
+	}
+	return
 }
 
 func connect(host string, port int, timeout time.Duration) error {
@@ -78,14 +130,17 @@ func connect(host string, port int, timeout time.Duration) error {
 	// in progress error
 	_ = syscall.Connect(sock, &syscall.SockaddrInet4{Port: port, Addr: addr})
 
-	waitWithTimeout(sock, 500*time.Millisecond)
+	state, err := waitWithTimeout(sock, 500*time.Millisecond)
 
+	fmt.Println(state, err)
 	return nil
 }
 
 func main() {
-	err := connect("www.google.com", 80, 500*time.Millisecond)
-	err = connect("www.google.com", 89, 500*time.Millisecond)
+	err := connect("robotmonkey.duckdns.org", 22, 500*time.Millisecond)
+	err = connect("robotmonkey.duckdns.org", 80, 500*time.Millisecond)
+	err = connect("www.google.com", 80, 500*time.Millisecond)
+	err = connect("www.google.com", 81, 500*time.Millisecond)
 
 	fmt.Println(err)
 }
