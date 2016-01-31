@@ -34,6 +34,8 @@ const (
 )
 
 func waitWithTimeout(socket int, timeout time.Duration) {
+	start := time.Now()
+
 	rfdset := &syscall.FdSet{}
 	wfdset := &syscall.FdSet{}
 	efdset := &syscall.FdSet{}
@@ -50,10 +52,10 @@ func waitWithTimeout(socket int, timeout time.Duration) {
 
 	n, err := syscall.Select(socket+1, rfdset, wfdset, efdset, &timeval)
 
-	fmt.Println(n, err, FD_ISSET(rfdset, socket), FD_ISSET(wfdset, socket), FD_ISSET(efdset, socket))
+	fmt.Println(n, err, FD_ISSET(rfdset, socket), FD_ISSET(wfdset, socket), FD_ISSET(efdset, socket), time.Since(start))
 }
 
-func connect(host string, port, timeout time.Duration) error {
+func connect(host string, port int, timeout time.Duration) error {
 	fmt.Println("\nConnecting to: ", host, "......")
 
 	sock, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
@@ -74,7 +76,7 @@ func connect(host string, port, timeout time.Duration) error {
 
 	// ignore error from connect in non-blocking mode. as it will always return a
 	// in progress error
-	_ = syscall.Connect(sock, &syscall.SockaddrInet4{Port: 80, Addr: addr})
+	_ = syscall.Connect(sock, &syscall.SockaddrInet4{Port: port, Addr: addr})
 
 	waitWithTimeout(sock, 500*time.Millisecond)
 
@@ -83,6 +85,8 @@ func connect(host string, port, timeout time.Duration) error {
 
 func main() {
 	err := connect("www.google.com", 80, 500*time.Millisecond)
+	err = connect("www.google.com", 89, 500*time.Millisecond)
+
 	fmt.Println(err)
 }
 
