@@ -9,8 +9,9 @@ import (
 )
 
 type Canvas struct {
-	ctx     *dom.CanvasRenderingContext2D
-	Animate func(t time.Duration)
+	ctx           *dom.CanvasRenderingContext2D
+	animateFunc   func(t time.Duration)
+	animateEnable bool
 }
 
 func MakeCanvas(id string) *Canvas {
@@ -22,6 +23,22 @@ func MakeCanvas(id string) *Canvas {
 	return &c
 }
 
+func (c *Canvas) SetAnimateFunc(f func(t time.Duration)) {
+	c.animateFunc = f
+}
+
+func (c *Canvas) doAnimate(t time.Duration) {
+	if c.animateFunc != nil && c.animateEnable {
+		c.animateFunc(t)
+		dom.GetWindow().RequestAnimationFrame(c.doAnimate)
+	}
+}
+
+func (c *Canvas) Animate(animate bool) {
+	c.animateEnable = animate
+	dom.GetWindow().RequestAnimationFrame(c.doAnimate)
+}
+
 func main() {
 
 	js.Global.Call("addEventListener", "load", func() {
@@ -30,8 +47,7 @@ func main() {
 		canvas := MakeCanvas("canvas")
 		println(img)
 		var x = 1
-		var aniFrm func(t time.Duration)
-		aniFrm = func(t time.Duration) {
+		canvas.SetAnimateFunc(func(t time.Duration) {
 			canvas.ctx.FillStyle = "black"
 			canvas.ctx.FillRect(0, 0, 640, 480)
 			canvas.ctx.FillStyle = "red"
@@ -44,8 +60,8 @@ func main() {
 			if x > 640 {
 				x = 0
 			}
-			dom.GetWindow().RequestAnimationFrame(aniFrm)
-		}
-		dom.GetWindow().RequestAnimationFrame(aniFrm)
+		})
+
+		canvas.Animate(true)
 	})
 }
