@@ -5,56 +5,27 @@ import (
 	"time"
 
 	"github.com/gopherjs/gopherjs/js"
-	"honnef.co/go/js/dom"
+	"github.com/simulatedsimian/go-js-dom"
+	"github.com/simulatedsimian/go_sandbox/gopherjstest/canvas2d"
 )
-
-type Canvas struct {
-	ctx           *dom.CanvasRenderingContext2D
-	animateFunc   func(t time.Duration)
-	animateEnable bool
-}
-
-func MakeCanvas(id string) *Canvas {
-	c := Canvas{}
-
-	doc := dom.GetWindow().Document()
-	canvas := doc.GetElementByID(id).(*dom.HTMLCanvasElement)
-	c.ctx = canvas.GetContext2d()
-	return &c
-}
-
-func (c *Canvas) SetAnimateFunc(f func(t time.Duration)) {
-	c.animateFunc = f
-}
-
-func (c *Canvas) doAnimate(t time.Duration) {
-	if c.animateFunc != nil && c.animateEnable {
-		c.animateFunc(t)
-		dom.GetWindow().RequestAnimationFrame(c.doAnimate)
-	}
-}
-
-func (c *Canvas) Animate(animate bool) {
-	c.animateEnable = animate
-	dom.GetWindow().RequestAnimationFrame(c.doAnimate)
-}
 
 func main() {
 
 	js.Global.Call("addEventListener", "load", func() {
 		doc := dom.GetWindow().Document()
 		img := doc.GetElementByID("img_elephant").(*dom.HTMLImageElement)
-		canvas := MakeCanvas("canvas")
+		canvas := canvas2d.MakeCanvas("canvas")
 		println(img)
-		var x = 1
+		var x = 1.0
 		canvas.SetAnimateFunc(func(t time.Duration) {
-			canvas.ctx.FillStyle = "black"
-			canvas.ctx.FillRect(0, 0, 640, 480)
-			canvas.ctx.FillStyle = "red"
+			canvas.Ctx.Rotate(float64(x) / 1000.0)
+			canvas.Ctx.FillStyle = "black"
+			canvas.Ctx.FillRect(0, 0, 640, 480)
+			canvas.Ctx.FillStyle = "red"
 			s := fmt.Sprint(t)
-			canvas.ctx.FillText(s, x, 100, 300)
+			canvas.Ctx.FillText(s, int(x), 100, 300)
 
-			canvas.ctx.Call("drawImage", img.Object, x, 100, 100, 100)
+			canvas.Ctx.DrawImageSection(img.Object, 0, 0, 100, 100, x, 100, 100, 100)
 
 			x++
 			if x > 640 {
